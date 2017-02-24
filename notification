@@ -1,0 +1,56 @@
+(function runMailScript(current, template, email, email_action, event) {
+	
+	//request sys_id
+	var parameterTwo = event.parm2;
+	
+	template.print('<table width="100%"><tr><td><span style="color: #8a8a8a; font-size: 17px; font-weight: bold; font-family:  Helvetica, Arial, sans serif;">${approver}</span>,<br/><span style="color: #8a8a8a; font-size: 17px; font-family:  Helvetica, Arial, sans-serif;">' + GetRequestedFor(parameterTwo) + ' has requested access to </span><span style="color: #8a8a8a; font-size: 17px; font-weight: bold; font-style: italic; font-family:  Helvetica, Arial, sans-serif;"> ' + GetZones(parameterTwo) + '</span></td></tr></table><hr/><table width="100%"><tr><td><span style="font-size: 22px; color: #808080; font-weight: 600; line-height: 1.4285; font-family: Helvetica, Arial, sans-serif;">No Need to Login - Approve or Reject Here</span><hr/><span style="color: green; font-weight: 600; font-size: 17px; font-family:  Helvetica, Arial, sans-serif;">${mailto:mailto.approval}</span><br/><span style="color: red; font-weight: 600; font-size: 17px; font-family:  Helvetica, Arial, sans-serif;">${mailto:mailto.rejection}</span></td></tr></table><hr/><table width="100%"><tr><td><table><tr><td bgcolor="#278efc" style="padding: 0px 18px 17px 18px; -webkit-border-radius:15px; border-radius:15px"  align="center"><a href="nav_to.do?uri=sc_request.do?sys_id=${sysapproval}" title="View Request" target="_blank" style="font-size: 16px;  font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #ffffff; text-decoration: none; display: inline-block;">View Request</a></td></tr></table><hr/></td></tr></table><table width="100%"><tr><td><span style="color: #808080; font-size: 17px; font-weight: 600; font-family: Helvetica, Arial, sans-serif;">**Please do not reply to this email.  This mailbox is not set up to receive email. Please <a href="mailto:servicedesk@us.panasonic.com">Email Us</a> for any questions.**</span></td></tr></table><hr/><table width="100%"><tr><td><span style="color: #808080; font-size: 17px; font-family: Helvetica, Arial, sans-serif;">Thank you,</span><br/><span style="color: #808080; font-size: 17px; font-weight: 600; font-family: Helvetica, Arial, sans-serif;">PASA Security</span></td></tr></table>');
+})(current, template, email, email_action, event);
+
+
+//gets requested for
+function GetRequestedFor(request)
+{
+	var requestedFor = '';
+	
+	var grRequestedFor = new GlideRecord('sc_request');
+	grRequestedFor.addQuery('sys_id', request);
+	grRequestedFor.query();
+	
+	while(grRequestedFor.next())
+	{
+		requestedFor = grRequestedFor.requested_for.name;
+	}
+	return requestedFor;
+}
+
+
+//gets zone list
+function GetZones(request)
+{
+	//variables to hold zones
+	var selectedZones = '';
+	var individualZones = '';
+	var finalZoneList = '';
+	var zoneCounter = 0;
+	
+	var grReqItemZones = new GlideRecord('sc_req_item');
+	grReqItemZones.addQuery('request', request);
+	grReqItemZones.query();
+
+	while(grReqItemZones.next()) { selectedZones = grReqItemZones.variable_pool.zone_access.toString(); }
+
+	individualZones = selectedZones.split(",");
+	for(var i = 0; i < individualZones.length; i++)
+	{
+		var grZoneName = new GlideRecord('u_security_zones');
+		grZoneName.addQuery('sys_id', individualZones[i]);
+		grZoneName.query();
+
+		while(grZoneName.next())
+		{	
+			if(zoneCounter == 0) { finalZoneList = grZoneName.u_name_of_zone; zoneCounter++; }
+			else { finalZoneList += ', ' + grZoneName.u_name_of_zone; zoneCounter++; }
+		}
+	}
+	return finalZoneList;
+}
